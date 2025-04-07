@@ -1,0 +1,25 @@
+version: 2.1
+
+orbs:
+  aws-ecr: circleci/aws-ecr@8.0.0
+  aws-ecs: circleci/aws-ecs@2.2.0
+
+jobs:
+  deploy:
+    docker:
+      - image: cimg/aws:2023.09
+    steps:
+      - checkout
+      - aws-ecs/update-service:
+          family: "your-ecs-task-definition-name"
+          cluster-name: "mycluster"
+          service-name: "my-ecs-service2"
+          container-image-name-updates: "container=public.ecr.aws/w1g6z4w3/repo:latest"
+          aws-region: $AWS_REGION
+
+workflows:
+  deploy-workflow:
+    jobs:
+      - deploy:
+          context: aws-creds  # CircleCI context containing AWS credentials
+
