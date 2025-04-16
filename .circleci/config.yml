@@ -59,24 +59,21 @@
 
 ################################################################
 
-
 version: 2.1
 
 orbs:
   terraform: circleci/terraform@3.2.0
-  aws-cli: circleci/aws-cli@4.0.0  # For AWS credentials management
+  aws-cli: circleci/aws-cli@4.0.0  # For AWS CLI setup (but credentials are passed via env vars)
 
 jobs:
   terraform_apply:
     docker:
-      - image: cimg/aws:2024.01  # Pre-installed with AWS CLI & Terraform
+      - image: cimg/aws:2024.01  # Includes AWS CLI & Terraform
+    environment:
+      AWS_REGION: "us-east-1"  # Set default region (or use env var)
     steps:
       - checkout
-      - aws-cli/setup:  # Securely configure AWS credentials
-          role-arn: ${AWS_ROLE_ARN}  # Use IAM roles (recommended)
-          aws-access-key-id: ${AWS_ACCESS_KEY_ID}  # Fallback (if not using roles)
-          aws-secret-access-key: ${AWS_SECRET_ACCESS_KEY}
-          aws-region: ${AWS_REGION}
+      - aws-cli/setup  # No direct args; relies on env vars
       - terraform/install:
           terraform_version: "1.3.7"
       - run:
@@ -88,14 +85,14 @@ jobs:
       - run:
           name: Terraform Apply
           command: terraform apply -input=false -auto-approve tfplan
-      - store_artifacts:  # Save plan for audit
+      - store_artifacts:
           path: tfplan
 
 workflows:
   terraform_workflow:
     jobs:
       - terraform_apply:
-          context: aws-creds  # Use context for AWS creds (recommended)
+          context: aws-creds  # Contains AWS credentials as env vars
           filters:
             branches:
-              only: main  # Only run on main branch (adjust as needed)
+              only: main
